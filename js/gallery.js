@@ -64,52 +64,63 @@ const images = [
   },
 ];
 
-const gallery = document.querySelector('.gallery');
+let instance;
 
-const image = images
-  .map(
-    el =>
-      `<li class="gallery-item">
-  <a class="gallery-link" href="${el.original}">
+const refs = {
+  gallery: document.querySelector('.gallery'),
+};
+
+refs.gallery.innerHTML = createMarcup(images);
+
+refs.gallery.addEventListener('click', onGalleryClick);
+
+function onGalleryClick(event) {
+  event.preventDefault();
+  if (event.target === event.currentTarget) {
+    return;
+  }
+  const original = event.target.dataset.source;
+  const description = event.target.dataset.description;
+
+  instance = basicLightbox.create(
+    `<div class="modal">
+        <img class="modal-img"
+          src= "${original}"
+          alt="${description}"
+        />
+     </div>`,
+    {
+      onShow: () => {
+        document.addEventListener('keydown', onModalClose);
+      },
+      onClose: () => {
+        document.removeEventListener('keydown', onModalClose);
+      },
+    },
+  );
+  instance.show();
+}
+
+function createMarcup(arr) {
+  return arr
+    .map(
+      ({ preview, original, description }) =>
+        `<li class="gallery-item">
+  <a class="gallery-link" href="${original}">
     <img
       class="gallery-image"
-      src="${el.preview}"
-      data-source="${el.original}"
-      alt="${el.description}"
+      src="${preview}"
+      data-source="${original}"
+      alt="${description}"
     />
   </a>
 </li>`,
-  )
-  .join('');
-
-gallery.insertAdjacentHTML('beforeend', image);
-
-gallery.addEventListener('click', onImgClick);
-
-function onImgClick(event) {
-  blockDownloadImg(event);
-
-  if (event.target.nodeName !== 'IMG') {
-    return;
-  }
-
-  const instance = basicLightbox.create(`<div class="modal">
-    <img src="${event.target.dataset.source}" alt="${event.target.alt}" width="1112" height="640">
-    </div>
-    `);
-  instance.show();
-
-  gallery.addEventListener('keydown', onEscapeClick);
-
-  function onEscapeClick(event) {
-    if (event.code !== 'Escape') {
-        return;
-      }
-      instance.close();
-      gallery.removeEventListener('keydown', onEscapeClick);
-  }
+    )
+    .join('');
 }
 
-function blockDownloadImg(event) {
-  event.preventDefault();
+function onModalClose(event) {
+  if (event.code === 'Escape') {
+    instance.close();
+  }
 }
